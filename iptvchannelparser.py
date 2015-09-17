@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 from pprint import pprint
 
 # globals
-iprtv_indexurl = 'http://w.zt6.nl/tvmenu/index.xhtml.gz'
+iprtv_indexurl = 'http://w.stb.zt6.nl/tvmenu/index.xhtml.gz'
 
 
 def parseJsDict(line):
