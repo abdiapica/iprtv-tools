@@ -18,10 +18,10 @@ def parseJsDict(line):
     # Meta:         k:a,b:{"default":"NPO 1"},q:{"default":"NPO 1"},j:"ned1",n:"ned1",w:"npotv1.png",v:"npotv1.png",u:"npotv1.png",o:b,e:[],f:[],g:[]
     # Webstream:    b:{"default":"Uitzending Gemist"},G:"http://npo.app.zt6.nl/app",J:1,H:"npo.r.zt6.nl"
     ret = {}
+    line = re.sub( '[{}"]', '', line )
     variables = line.split(',')
     for var in variables:
         key,value = var.split(':',1)
-        value = re.sub( '[{}"]', '', value )
         if re.search( '[A-z0-9]:[A-z0-9]', value ):
             k,v = value.split(':')
             value = {}
@@ -85,12 +85,12 @@ def main():
 
         # Find the type, either radio or tv
         entry['type']   = re.search( 'I\[a\]\.r="(.*?)"', cjs ).group(1)
-        entry['collection'] = re.search( 'K\.(tv_|radio_[a-z].*?)\.c\.push', cjs ).group(1)
+        entry['cat'] = re.search( '[IJKL]\.((?:tv|radio)_[a-z]*?)\.[abc]\.push', cjs ).group(1)
 
         entry['id']  = re.search( '^e\.push\("(.*?)"\)', cjs ).group(1)
 
-        ## uitzending gemist, before meta, because of BBC Fist
-        # if(Z.h264&&(d.gemist||!h.vodafone&&1))I[a].da={b:{"default":"Uitzending Gemist"},G:"http://npo.app.zt6.nl/app",J:1,H:"npo.r.zt6.nl"}
+        ## Webstreams (some channels have them), before meta, because of BBC Fist
+        # da={b:{"default":"Uitzending Gemist"},G:"http://npo.app.zt6.nl/app",J:1,H:"npo.r.zt6.nl"}
         match = re.search( 'da[:=]\{(b:.*?H:".*?")\}', cjs )
         if match:
             c_webstream = parseJsDict( match.group(1) )
@@ -99,7 +99,7 @@ def main():
             entry['webstream']['type'] = c_webstream['b']['default']
             entry['webstream']['type2'] = c_webstream['H']
 
-        # f=a}I[a]={k:a,b:{"default":"NPO 1"},q:{"default":"NPO 1"},j:"ned1",n:"ned1",w:"npotv1.png",v:"npotv1.png",u:"npotv1.png",o:b,e:[],f:[],g:[]}
+        # {k:a,b:{"default":"NPO 1"},q:{"default":"NPO 1"},j:"ned1",n:"ned1",w:"npotv1.png",v:"npotv1.png",u:"npotv1.png",o:b,e:[],f:[],g:[]}
         c_meta =  re.search( '\{(k:a,b:\{.*?g:\[\])\}', cjs).group(1)
         # Some channels have their 'webstream' item embedded within their meta line.
         # Need to strip that first, incl trailing ','
@@ -108,28 +108,28 @@ def main():
         entry['name'] = c_meta['b']['default']
         entry['icon'] = c_meta.get('u')
 
-        c_streams = re.findall( '(b\.[a-z]=\{"default":.*?g.push\("[A-z0-9\.-].*?"\))', cjs )
-        print( 'Chan:', entry['id'], '-', entry['collection'], '-', len(c_streams) )
-        entry['numstreams'] = len(c_streams)
+        # Last, but most definitely the worst of them all, streams. It's why where doing all of this ;)
+        c_streams = re.findall( '(if\(A==.*?"(?:igmp|rtsp)://.*?")', cjs )
+        entry['streams'] = []
+        for s in c_streams:
+            stream = {}
+            stream['url'] = re.search( '((?:igmp|rtsp)://.*?)(?:;|")', s ).group(1)
+            stream['target'] = re.search( '\((A==.*?)\)', s ).group(1).replace('A==','').replace('"','').split('||')
+            match = re.search( '{(".*?")}', s )
+            if match:
+                stream['name'] = parseJsDict( match.group(1) )['default']
+            if s.find('rtpskip=yes'):
+                stream['rtpskip'] = 1
+            entry['streams'].append( stream )
+
+        # Add to total streamcount
         streams = streams + len(c_streams)
-        """
-        b.b={"default":"HD+"}
-        b.h="igmp://224.0.251.124:8248
-        rtpskip=yes"
-        b.Ua=[{zb:"2226"}]
-        b.F=1
-        b.P=1
-        b.B={b:"Teletekst",D:1}
-        b.a=128E5
-        if(i==-1||b.a<=i)I[a].e.push(b)
-        else I[a].i=true
-        if(j==-1||b.a<=j)I[a].f.push(b)}}else I[a].g.push("ned1.wba") 
-        """
 
         # Add this channel entry to the main dict
-        channels[entry['id']] = entry
+        if len(c_streams) > 0:
+            channels[entry['id']] = entry
             
-    #pprint( channels )
+    pprint( channels )
     print( 'Total multicast streams found:', streams )
 
 
