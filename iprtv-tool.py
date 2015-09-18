@@ -9,8 +9,8 @@ from tools import m3u
 parser = argparse.ArgumentParser()
 
 # add arguments to the parser
-parser.add_argument('--parse', action='store', dest='parse_value', choices=['m3u', 'raw', 'udpxy'], default='m3u',
-                    help='Output parser format')
+parser.add_argument('--out', action='store', dest='parse_value', choices=['m3u', 'raw', 'udpxy'], default='m3u',
+                    help='Output format')
 
 parser.add_argument('--udpxy', action='store', dest='udpxy_value', 
                     help='Use given udpxy url (i.e. http://192.168.0.1/4020)')
@@ -29,10 +29,8 @@ def main():
     # create a m3uParser object
     m3ulist = m3u.m3uParser()
 
-    for c in channels.values():
-
+    for c in channels:
         streams = c['streams']
-        
         for s in streams:
             m3ulist.addItem(c['name'],s['url'])
 

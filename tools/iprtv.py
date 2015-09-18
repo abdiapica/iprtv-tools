@@ -8,7 +8,8 @@ import io, gzip, re
 from urllib import request
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
-from pprint import pprint
+
+_indexurl = 'http://w.stb.zt6.nl/tvmenu/index.xhtml.gz'
 
 def getChannels( indexurl ):
     # -------------------------------------------------------------------------
@@ -56,25 +57,24 @@ def getChannels( indexurl ):
     #   Gives webstream type, url, etc
 
     # Dict we'll us (with examples)
-    channels = {}
-
+    channels = []
     streams = 0
-
     # Processing loop
     for cjs in chanjs:
         entry = {}
 
         # Find the type, either radio or tv
-        entry['type']   = re.search( 'I\[a\]\.r="(.*?)"', cjs ).group(1)
-        entry['cat'] = re.search( '[IJKL]\.((?:tv|radio)_[a-z]*?)\.[abc]\.push', cjs ).group(1)
-
         entry['id']  = re.search( '^e\.push\("(.*?)"\)', cjs ).group(1)
+        # Category, tv_local, tv_sports, radio_bla, etc
+        entry['cat'] = re.search( '[IJKL]\.((?:tv|radio)_[a-z]*?)\.[abc]\.push', cjs ).group(1)
+        # Type; either radio or tv
+        entry['type']   = re.search( 'I\[a\]\.r="(.*?)"', cjs ).group(1)
 
         ## Webstreams (some channels have them), before meta, because of BBC Fist
         # da={b:{"default":"Uitzending Gemist"},G:"http://npo.app.zt6.nl/app",J:1,H:"npo.r.zt6.nl"}
         match = re.search( 'da[:=]\{(b:.*?H:".*?")\}', cjs )
         if match:
-            c_webstream = parseJsDict( match.group(1) )
+            c_webstream = _parseJsDict( match.group(1) )
             entry['webstream'] = {}
             entry['webstream']['url'] = c_webstream['G']
             entry['webstream']['type'] = c_webstream['b']['default']
@@ -85,7 +85,7 @@ def getChannels( indexurl ):
         # Some channels have their 'webstream' item embedded within their meta line.
         # Need to strip that first, incl trailing ','
         c_meta = re.sub( 'da[:=]\{b:.*?H:".*?"\},', '', c_meta )
-        c_meta   = parseJsDict( c_meta )
+        c_meta = _parseJsDict( c_meta )
         entry['name'] = c_meta['b']['default']
         entry['icon'] = c_meta.get('u')
 
@@ -98,7 +98,7 @@ def getChannels( indexurl ):
             stream['target'] = re.search( '\((A==.*?)\)', s ).group(1).replace('A==','').replace('"','').split('||')
             match = re.search( '{(".*?")}', s )
             if match:
-                stream['name'] = parseJsDict( match.group(1) )['default']
+                stream['name'] = _parseJsDict( match.group(1) )['default']
             if s.find('rtpskip=yes'):
                 stream['rtpskip'] = 1
             entry['streams'].append( stream )
@@ -106,15 +106,15 @@ def getChannels( indexurl ):
         # Add to total streamcount
         streams = streams + len(c_streams)
 
-        # Add this channel entry to the main dict
+        # Not all channelblobs actually have channels
         if len(c_streams) > 0:
-            channels[entry['id']] = entry
+            channels.append(entry)
             
     #pprint( channels )
     #print( 'Total multicast streams found:', streams )
     return channels
 
-def parseJsDict( line ):
+def _parseJsDict( line ):
     # Meta:         k:a,b:{"default":"NPO 1"},q:{"default":"NPO 1"},j:"ned1",n:"ned1",w:"npotv1.png",v:"npotv1.png",u:"npotv1.png",o:b,e:[],f:[],g:[]
     # Webstream:    b:{"default":"Uitzending Gemist"},G:"http://npo.app.zt6.nl/app",J:1,H:"npo.r.zt6.nl"
     ret = {}
@@ -128,4 +128,9 @@ def parseJsDict( line ):
             value[k] = v
         ret[key] = value
     return ret
+
+# When called directly
+if __name__ == '__main__':
+    from pprint import pprint
+    pprint( getChannels( _indexurl ) )
 
