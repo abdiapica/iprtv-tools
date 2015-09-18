@@ -2,8 +2,8 @@
 
 import argparse
 from pprint import pprint
-from lib.channelparser import channelParser
-from lib.m3uparser import m3uParser
+from tools import iprtv
+from tools import m3u
 
 # create an argparser
 parser = argparse.ArgumentParser()
@@ -23,28 +23,21 @@ results = parser.parse_args()
 def main():
     
     # create a channelParser object
-    cp = channelParser()
-
-    # get the channellist from the channelParser object
-    cl = cp.getChannels()
-    #pprint(cl)
+    channels = iprtv.getChannels( 'http://w.stb.zt6.nl/tvmenu/index.xhtml.gz' )
+    #pprint(iptvchannels)
 
     # create a m3uParser object
-    m3u = m3uParser()
+    m3ulist = m3u.m3uParser()
 
-    for channelItem in cl:
-        channel = cl[channelItem]
+    for c in channels.values():
 
-        channelName = channel['name']
-
-        streamList = channel['streams']
+        streams = c['streams']
         
-        for streamItem in streamList:
-            url = streamItem.get('url')            
-            m3u.addItem(channelName,url)
+        for s in streams:
+            m3ulist.addItem(c['name'],s['url'])
 
     # parse whatever has to be parsed
-    m3u.parseM3u()
+    m3ulist.parseM3u()
 
 # allow this to be a module
 if __name__ == '__main__':
