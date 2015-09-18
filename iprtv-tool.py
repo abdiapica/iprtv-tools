@@ -17,3 +17,12 @@ results = parser.parse_args()
 
 
 # do the magic here
+def main():
+    print('Hallo.')
+
+
+
+# allow this to be a module
+if __name__ == '__main__':
+    main()
+
