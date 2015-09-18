@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
 import argparse
+from pprint import pprint
+from lib.channelparser import channelParser
 
 # create an argparser
 parser = argparse.ArgumentParser()
@@ -18,9 +20,14 @@ results = parser.parse_args()
 
 # do the magic here
 def main():
-    print('Hallo.')
+    
+    # create channelparser
+    cp = {}
+    cp = channelParser()
 
+    cl = cp.getChannels()
 
+    pprint(cl)
 
 # allow this to be a module
 if __name__ == '__main__':

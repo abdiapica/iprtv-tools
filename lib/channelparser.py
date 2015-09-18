@@ -10,27 +10,14 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from pprint import pprint
 
-# globals
-iprtv_indexurl = 'http://w.stb.zt6.nl/tvmenu/index.xhtml.gz'
 
 class channelParser:
 
-    def parseJsDict(line):
-        # Meta:         k:a,b:{"default":"NPO 1"},q:{"default":"NPO 1"},j:"ned1",n:"ned1",w:"npotv1.png",v:"npotv1.png",u:"npotv1.png",o:b,e:[],f:[],g:[]
-        # Webstream:    b:{"default":"Uitzending Gemist"},G:"http://npo.app.zt6.nl/app",J:1,H:"npo.r.zt6.nl"
-        ret = {}
-        line = re.sub( '[{}"]', '', line )
-        variables = line.split(',')
-        for var in variables:
-            key,value = var.split(':',1)
-            if re.search( '[A-z0-9]:[A-z0-9]', value ):
-                k,v = value.split(':')
-                value = {}
-                value[k] = v
-            ret[key] = value
-        return ret
-
     def __init__(self):
+
+        self.iprtv_indexurl = 'http://w.stb.zt6.nl/tvmenu/index.xhtml.gz'
+
+    def getChannels(self):
         # -------------------------------------------------------------------------
         # Goal here is to download the latest code.js, containing all channel data
         #
@@ -40,11 +27,11 @@ class channelParser:
         # We'll end up with variable 'page', containing the full code.js
 
         # Fetch index file and extract the codejs filename / url
-        url =  request.urlopen( iprtv_indexurl )
+        url =  request.urlopen( self.iprtv_indexurl )
         with gzip.GzipFile( fileobj=io.BytesIO( url.read() ) ) as p:
             page = p.read().decode( 'utf-8', 'ignore' ) 
         soup = BeautifulSoup( page )
-        iprtv_codejsurl = urljoin( iprtv_indexurl, soup.script['src'] )
+        iprtv_codejsurl = urljoin( self.iprtv_indexurl, soup.script['src'] )
 
         # Fetch and uncomplress the code.js file
         url =  request.urlopen( iprtv_codejsurl )
@@ -94,7 +81,7 @@ class channelParser:
             # da={b:{"default":"Uitzending Gemist"},G:"http://npo.app.zt6.nl/app",J:1,H:"npo.r.zt6.nl"}
             match = re.search( 'da[:=]\{(b:.*?H:".*?")\}', cjs )
             if match:
-                c_webstream = parseJsDict( match.group(1) )
+                c_webstream = self.parseJsDict( match.group(1) )
                 entry['webstream'] = {}
                 entry['webstream']['url'] = c_webstream['G']
                 entry['webstream']['type'] = c_webstream['b']['default']
@@ -105,7 +92,7 @@ class channelParser:
             # Some channels have their 'webstream' item embedded within their meta line.
             # Need to strip that first, incl trailing ','
             c_meta = re.sub( 'da[:=]\{b:.*?H:".*?"\},', '', c_meta )
-            c_meta   = parseJsDict( c_meta )
+            c_meta   = self.parseJsDict( c_meta )
             entry['name'] = c_meta['b']['default']
             entry['icon'] = c_meta.get('u')
 
@@ -118,7 +105,7 @@ class channelParser:
                 stream['target'] = re.search( '\((A==.*?)\)', s ).group(1).replace('A==','').replace('"','').split('||')
                 match = re.search( '{(".*?")}', s )
                 if match:
-                    stream['name'] = parseJsDict( match.group(1) )['default']
+                    stream['name'] = self.parseJsDict( match.group(1) )['default']
                 if s.find('rtpskip=yes'):
                     stream['rtpskip'] = 1
                 entry['streams'].append( stream )
@@ -130,9 +117,9 @@ class channelParser:
             if len(c_streams) > 0:
                 channels[entry['id']] = entry
                 
-        pprint( channels )
-        print( 'Total multicast streams found:', streams )
-
+        #pprint( channels )
+        #print( 'Total multicast streams found:', streams )
+        return channels
 
         """
         # some useful regexps
@@ -151,4 +138,19 @@ class channelParser:
             getrow = re.compile('(if\(.*?){(.*?)"igmp://(%s):([0-9]*)(;rtpskip=yes)?"(.*?)\.push' % (ipregex))
         sys.exit(0)
         """
+
+    def parseJsDict(self, line):
+        # Meta:         k:a,b:{"default":"NPO 1"},q:{"default":"NPO 1"},j:"ned1",n:"ned1",w:"npotv1.png",v:"npotv1.png",u:"npotv1.png",o:b,e:[],f:[],g:[]
+        # Webstream:    b:{"default":"Uitzending Gemist"},G:"http://npo.app.zt6.nl/app",J:1,H:"npo.r.zt6.nl"
+        ret = {}
+        line = re.sub( '[{}"]', '', line )
+        variables = line.split(',')
+        for var in variables:
+            key,value = var.split(':',1)
+            if re.search( '[A-z0-9]:[A-z0-9]', value ):
+                k,v = value.split(':')
+                value = {}
+                value[k] = v
+            ret[key] = value
+        return ret
 
