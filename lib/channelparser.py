@@ -47,7 +47,7 @@ class channelParser:
         # Each "channel" starts with [cde].push("name") and ends with b=a
         re_channels = '([cde]\.push\("[ A-z0-9-]*"\).*?b=a)'
         chanjs = re.findall( re_channels, page );
-        print( 'number found:',len(chanjs) )
+        #print( 'number found:',len(chanjs) )
 
 
         # -------------------------------------------------------------------------
