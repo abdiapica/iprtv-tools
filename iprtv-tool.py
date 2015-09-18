@@ -3,6 +3,7 @@
 import argparse
 from pprint import pprint
 from lib.channelparser import channelParser
+from lib.m3uparser import m3uParser
 
 # create an argparser
 parser = argparse.ArgumentParser()
@@ -21,13 +22,29 @@ results = parser.parse_args()
 # do the magic here
 def main():
     
-    # create channelparser
-    cp = {}
+    # create a channelParser object
     cp = channelParser()
 
+    # get the channellist from the channelParser object
     cl = cp.getChannels()
+    #pprint(cl)
 
-    pprint(cl)
+    # create a m3uParser object
+    m3u = m3uParser()
+
+    for channelItem in cl:
+        channel = cl[channelItem]
+
+        channelName = channel['name']
+
+        streamList = channel['streams']
+        
+        for streamItem in streamList:
+            url = streamItem.get('url')            
+            m3u.addItem(channelName,url)
+
+    # parse whatever has to be parsed
+    m3u.parseM3u()
 
 # allow this to be a module
 if __name__ == '__main__':
