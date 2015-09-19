@@ -90,15 +90,26 @@ def getChannels( indexurl ):
         entry['icon'] = c_meta.get('u')
 
         # Last, but most definitely the worst of them all, streams. It's why where doing all of this ;)
-        c_streams = re.findall( '(if\(A==.*?"(?:igmp|rtsp)://.*?")', cjs )
+        c_streams = re.findall( '(if\(A==.*?"(?:igmp|rtsp)://.*?g\.push\(".*?"\))', cjs )
+        c_streams = c_streams + re.findall( '(if\(A==.*?"(?:igmp|rtsp)://.*?")', cjs )
         entry['streams'] = []
         for s in c_streams:
             stream = {}
+
             stream['url'] = re.search( '((?:igmp|rtsp)://.*?)(?:;|")', s ).group(1)
-            stream['target'] = re.search( '\((A==.*?)\)', s ).group(1).replace('A==','').replace('"','').split('||')
+            ## Filter out double entries, caused by the overlapping c_streams search
+            if len([ i for i in entry['streams'] if i['url'] == stream['url'] ]):
+                continue
+
+            stream['provider'] = re.search( '\((A==.*?)\)', s ).group(1).replace('A==','').replace('"','').split('||')
             match = re.search( '{(".*?")}', s )
             if match:
                 stream['name'] = _parseJsDict( match.group(1) )['default']
+
+            match = re.search( 'g\.push\("(.*?)"\)', s )
+            if match:
+                stream['name2'] = match.group(1)
+
             if s.find('rtpskip=yes'):
                 stream['rtpskip'] = 1
             entry['streams'].append( stream )
@@ -132,5 +143,22 @@ def _parseJsDict( line ):
 # When called directly
 if __name__ == '__main__':
     from pprint import pprint
-    pprint( getChannels( _indexurl ) )
+    ctv = 0
+    cradio = 0
+    ctotal = 0
+    stotal = 0
+    stv = 0
+    sradio = 0
+    for i in getChannels( _indexurl ):
+        ctotal = ctotal+1
+        stotal = stotal+len(i['streams']) 
+        if i['type'] == 'tv':
+            ctv = ctv+1
+            stv = stv+len(i['streams']) 
+        if i['type'] == 'radio':
+            cradio = cradio+1
+            sradio = sradio+len(i['streams'])
+    print( 'Total channels {} with {} streams'.format( ctotal, stotal ) )
+    print( 'TV channels {} with {} streams'.format( ctv, stv ) )
+    print( 'Radio channels {} with {} streams'.format( cradio, sradio ) )
 
