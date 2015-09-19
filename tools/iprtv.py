@@ -110,7 +110,7 @@ def getChannels( indexurl ):
             if match:
                 stream['name2'] = match.group(1)
 
-            if s.find('rtpskip=yes'):
+            if 'rtpskip=yes' in s:
                 stream['rtpskip'] = 1
             entry['streams'].append( stream )
 
