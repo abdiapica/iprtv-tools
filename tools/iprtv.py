@@ -112,10 +112,8 @@ def getChannels( indexurl ):
 
             if 'rtpskip=yes' in s:
                 stream['rtpskip'] = 1
-            entry['streams'].append( stream )
 
-        # Add to total streamcount
-        streams = streams + len(c_streams)
+            entry['streams'].append( stream )
 
         # Not all channelblobs actually have channels
         if len(c_streams) > 0:
@@ -149,16 +147,29 @@ if __name__ == '__main__':
     stotal = 0
     stv = 0
     sradio = 0
-    for i in getChannels( _indexurl ):
+    tname1 = 0
+    tname2 = 0
+    rname1 = 0
+    rname2 = 0
+    
+    for channel in getChannels( _indexurl ):
         ctotal = ctotal+1
-        stotal = stotal+len(i['streams']) 
-        if i['type'] == 'tv':
+        stotal = stotal+len(channel['streams']) 
+        if channel['type'] == 'tv':
             ctv = ctv+1
-            stv = stv+len(i['streams']) 
-        if i['type'] == 'radio':
+            stv = stv+len(channel['streams']) 
+            tname1 = tname1 + len([k['name'] for k in channel['streams'] if k.get('name') ] )
+            tname2 = tname2 + len([k['name2'] for k in channel['streams'] if k.get('name2') ] )
+
+        if channel['type'] == 'radio':
             cradio = cradio+1
-            sradio = sradio+len(i['streams'])
+            sradio = sradio+len(channel['streams'])
+            rname1 = rname1 + len([k['name'] for k in channel['streams'] if k.get('name') ] )
+            rname2 = rname2 + len([k['name2'] for k in channel['streams'] if k.get('name2') ] )
+
     print( 'Total channels {} with {} streams'.format( ctotal, stotal ) )
     print( 'TV channels {} with {} streams'.format( ctv, stv ) )
+    print( '        name1: {}  name2: {}'.format( tname1, tname2 ) )
     print( 'Radio channels {} with {} streams'.format( cradio, sradio ) )
+    print( '        name1: {}  name2: {}'.format( rname1, rname2 ) )
 
