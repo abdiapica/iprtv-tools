@@ -8,19 +8,33 @@ from tools import m3u
 # do the magic here
 def main():
     # create an argparser
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description = 'Fetch a channel list and output various formats, optionally using filters'
+    )
     # add arguments to the parser
-    parser.add_argument('--out', action='store', dest='out_format', choices=['m3u', 'raw', 'yaml', 'udpxy'], default='m3u', help='Output format')
-    parser.add_argument('--udpxy', action='store', dest='udpxy_prefix', help='Use given udpxy url (i.e. http://192.168.0.1/4020)')
+    parser.add_argument('-o', '--out', action='store', dest='out_format', choices=['m3u', 'raw', 'yaml' ], default='m3u', help='Output format')
+    parser.add_argument('--udpxy', action='store', dest='udpxy_prefix', help='Use given udpxy url (i.e. http://192.168.0.1/4020)\nThis will convert all igmp/sstp stream prefixes to udp')
+    parser.add_argument('-q', '--quality', action='store', dest='quality', choices=['sd','hd','any'], default='any', help='Quality selection')
+    parser.add_argument('-s', '--strict', action='store', dest='strict', help='Be strict in quality selection' )
+    parser.add_argument('-p', '--provider', action='store', dest='provider', choices=['ghm','wba'], default='ghm', help='Provider (i i think), ghm/wba')
 
     # process all the arguments
     results = parser.parse_args()
 
     channels = iprtv.getChannels( 'http://w.stb.zt6.nl/tvmenu/index.xhtml.gz' )
+
+    ## Filter here
+    #for c in channels:
+    #    for s in c['streams']:
+    #        if results.provider not in s['provider']:
+    #            continue
+            
+
     # create a channelParser object
     #pprint(iptvchannels)
     if results.out_format == 'raw':
-        pprint( channels )
+                print( '{} {} {}'. format( c['name'], str(s.get('name')).ljust(20), s['url'].ljust(25) ) )
+            #pprint( channels )
 
     elif results.out_format == 'yaml':
         import yaml
@@ -31,12 +45,15 @@ def main():
         m3ulist = m3u.m3uParser()
 
         for c in channels:
-            streams = c['streams']
-            for s in streams:
-                m3ulist.addItem(c['name'],s['url'])
+            for s in c['streams']:
+                if results.udpxy_prefix:
+                    m3ulist.addItem(c['name'], results.udpxy_prefix + s['url'].split('//')[1] )
+                else:
+                    m3ulist.addItem(c['name'],s['url'])
 
         # parse whatever has to be parsed
         m3ulist.parseM3u()
+        
 
     elif results.out_format == 'udpxy':
         print( 'not done yet' )
