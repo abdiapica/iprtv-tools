@@ -13,7 +13,7 @@ def main():
     )
     # add arguments to the parser
     parser.add_argument('-o', '--out', action='store', dest='out_format', choices=['m3u', 'raw', 'yaml' ], default='m3u', help='Output format')
-    parser.add_argument('--udpxy', action='store', dest='udpxy_prefix', help='Use given udpxy url (i.e. http://192.168.0.1/4020)\nThis will convert all igmp/sstp stream prefixes to udp')
+    parser.add_argument('-u', '--udpxy', action='store', dest='udpxy_prefix', help='Use given udpxy url (i.e. http://192.168.0.1/4020)\nThis will convert all igmp/sstp stream prefixes to udp')
     parser.add_argument('-q', '--quality', action='store', dest='quality', choices=['sd','hd','any'], default='any', help='Quality selection')
     parser.add_argument('-s', '--strict', action='store', dest='strict', help='Be strict in quality selection' )
     parser.add_argument('-p', '--provider', action='store', dest='provider', choices=['ghm','wba'], default='ghm', help='Provider (i i think), ghm/wba')
