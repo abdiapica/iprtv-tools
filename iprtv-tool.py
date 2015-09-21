@@ -55,9 +55,6 @@ def main():
         m3u.parseM3u( playlist )
         
 
-    elif results.out_format == 'udpxy':
-        print( 'not done yet' )
-
 # allow this to be a module
 if __name__ == '__main__':
     main()
