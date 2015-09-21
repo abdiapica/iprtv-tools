@@ -41,18 +41,18 @@ def main():
         print( yaml.dump( channels ) )
 
     elif results.out_format == 'm3u':
-        # create a m3uParser object
-        m3ulist = m3u.m3uParser()
+        # create a m3u list
+        playlist = []
 
         for c in channels:
             for s in c['streams']:
                 if results.udpxy_prefix:
-                    m3ulist.addItem(c['name'], results.udpxy_prefix + s['url'].split('//')[1] )
+                    playlist = m3u.m3uAddItem( playlist, c['name'], results.udpxy_prefix + s['url'].split('//')[1] )
                 else:
-                    m3ulist.addItem(c['name'],s['url'])
+                    playlist = m3u.m3uAddItem( playlist, c['name'],s['url'])
 
         # parse whatever has to be parsed
-        m3ulist.parseM3u()
+        m3u.parseM3u( playlist )
         
 
     elif results.out_format == 'udpxy':

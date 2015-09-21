@@ -1,5 +1,5 @@
 
-def addItem(m3ulist,channelname,url):
+def m3uAddItem(m3ulist,channelname,url):
     channelitem = {}
     channelitem['name'] = channelname
     channelitem['url'] = url
