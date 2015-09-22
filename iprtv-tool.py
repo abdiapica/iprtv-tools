@@ -12,6 +12,7 @@ def main():
         description = 'Fetch a channel list and output various formats, optionally using filters'
     )
     # add arguments to the parser
+    parser.add_argument('--dump', action='store_true', dest='dump', help='Just dump the list')
     parser.add_argument('-o', '--out', action='store', dest='out_format', choices=['m3u', 'raw', 'yaml' ], default='m3u', help='Output format')
     parser.add_argument('--udpxy', action='store', dest='udpxy_prefix', help='Use given udpxy url (i.e. http://192.168.0.1/4020)\nThis will convert all igmp/sstp stream prefixes to udp')
     parser.add_argument('-q', '--quality', action='store', dest='quality', choices=['sd','hd','any'], default='any', help='Quality selection')
@@ -23,18 +24,38 @@ def main():
 
     channels = iprtv.getChannels( 'http://w.stb.zt6.nl/tvmenu/index.xhtml.gz' )
 
+    if results.dump:
+        import yaml
+        print( yaml.dump( channels ) )
+        exit()
+
+    filtered = []
     ## Filter here
-    #for c in channels:
-    #    for s in c['streams']:
-    #        if results.provider not in s['provider']:
-    #            continue
-            
+    for idc, c in enumerate( channels ):
+        # Only TV for now
+        if c['type'] != 'tv':
+            channels.pop(idc)
+            continue
+        for ids, s in enumerate(c['streams']):
+            if results.provider not in s['provider']:
+                channels[idc]['streams'].pop(ids)
+                continue
+            if 'ztv' not in str(s.get('name')):
+                #if results.quality != 'any' and results.quality in s['name'].lower():
+                channels[idc]['streams'].pop(ids)
+                continue
+        if not len(c['streams']):
+            channels.pop(idc)
+            continue
+            #if s['name'] and s['name2']:
+            #    print('{} has both: {} {} '.format( c['name'], s['name'], s['name2']) )
+            #if '239' in s['url']:
+            #    print( '{};{};{};{};{}'.format( c['id'], c['name'], s.get('name'), s.get('name2'), s['url'] ) )
 
     # create a channelParser object
     #pprint(iptvchannels)
     if results.out_format == 'raw':
-                print( '{} {} {}'. format( c['name'], str(s.get('name')).ljust(20), s['url'].ljust(25) ) )
-            #pprint( channels )
+        pprint( channels )
 
     elif results.out_format == 'yaml':
         import yaml

@@ -87,7 +87,8 @@ def getChannels( indexurl ):
         c_meta = re.sub( 'da[:=]\{b:.*?H:".*?"\},', '', c_meta )
         c_meta = _parseJsDict( c_meta )
         entry['name'] = c_meta['b']['default']
-        entry['icon'] = c_meta.get('u')
+        if c_meta.get('u'):
+            entry['icon'] = urljoin( indexurl, '/tvmenu/images/channels/' + c_meta['u'] )
 
         # Last, but most definitely the worst of them all, streams. It's why where doing all of this ;)
         c_streams = re.findall( '(if\(A==.*?"(?:igmp|rtsp)://.*?g\.push\(".*?"\))', cjs )
