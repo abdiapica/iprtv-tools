@@ -1,22 +1,18 @@
-class m3uParser:
 
-    def __init__(self):
-        self.m3uitems = []
+def m3uAddItem(m3ulist,channelname,url):
+    channelitem = {}
+    channelitem['name'] = channelname
+    channelitem['url'] = url
 
-    def addItem(self,channelName,url):
-        channelItem = {}
-        channelItem['name'] = channelName
-        channelItem['url'] = url
+    m3ulist.append(channelitem)
+    return m3ulist
 
-        self.m3uitems.append(channelItem)
-
-    def parseM3u(self):
+def parseM3u(m3ulist):
         
-        print("#EXTM3U")
+    print("#EXTM3U")
 
-        for i in self.m3uitems:
-            print("#EXTINF:-1,", i['name'])
-            print(i['url'])
+    for i in m3ulist:
+        print("#EXTINF:-1,", i['name'])
+        print(i['url'])
 
-    #def writeM3u(filename):
 
