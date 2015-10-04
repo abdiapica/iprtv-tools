@@ -102,14 +102,14 @@ def getChannels( indexurl ):
             if len([ i for i in entry['streams'] if i['url'] == stream['url'] ]):
                 continue
 
-            stream['provider'] = re.search( '\((A==.*?)\)', s ).group(1).replace('A==','').replace('"','').split('||')
+            stream['provider'] = re.search( 'if\((A==.*?)\)', s ).group(1).replace('A==','').replace('"','').split('||')
             match = re.search( '{(".*?")}', s )
             if match:
-                stream['name'] = _parseJsDict( match.group(1) )['default']
+                stream['name2'] = _parseJsDict( match.group(1) )['default']
 
             match = re.search( 'g\.push\("(.*?)"\)', s )
             if match:
-                stream['name2'] = match.group(1)
+                stream['name'] = match.group(1)
 
             if 'rtpskip=yes' in s:
                 stream['rtpskip'] = 1
