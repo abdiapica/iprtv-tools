@@ -76,11 +76,10 @@ def main():
         playlist = []
 
         for c in channels:
-            for s in c['streams']:
-                if results.udpxy_prefix:
-                    playlist = m3u.m3uAddItem( playlist, c['name'], results.udpxy_prefix + s['url'].split('//')[1] )
-                else:
-                    playlist = m3u.m3uAddItem( playlist, c['name'],s['url'])
+            if results.udpxy_prefix:
+                playlist = m3u.m3uAddItem( playlist, c['name'], results.udpxy_prefix + c['streams']['url'].split('//')[1] )
+            else:
+                playlist = m3u.m3uAddItem( playlist, c['name'],c['streams']['url'])
 
         # parse whatever has to be parsed
         m3u.parseM3u( playlist )
