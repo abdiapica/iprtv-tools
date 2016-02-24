@@ -84,7 +84,7 @@ def getChannels( indexurl ):
         c_meta =  re.search( '\{(k:a,b:\{.*?g:\[\])\}', cjs).group(1)
         # Some channels have their 'webstream' item embedded within their meta line.
         # Need to strip that first, incl trailing ','
-        c_meta = re.sub( 'da[:=]\{b:.*?H:".*?"\},', '', c_meta )
+        c_meta = re.sub( '[cd]a[:=]\{b:.*?[GH]:".*?"\},', '', c_meta )
         c_meta = _parseJsDict( c_meta )
         entry['name'] = c_meta['b']['default']
         if c_meta.get('u'):
