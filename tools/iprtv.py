@@ -5,8 +5,10 @@
 
 import sys, os
 import io, gzip, re
-from urllib import request
-from urllib.parse import urljoin
+import requests
+#from urllib import request
+#from urllib.parse import urljoin
+from requests.compat import urljoin
 from bs4 import BeautifulSoup
 
 _indexurl = 'http://w.stb.zt6.nl/tvmenu/index.xhtml.gz'
@@ -21,16 +23,25 @@ def getChannels( indexurl ):
     # We'll end up with variable 'page', containing the full code.js
 
     # Fetch index file and extract the codejs filename / url
-    url =  request.urlopen( indexurl )
+    """
+    url = request.urlopen( indexurl )
     with gzip.GzipFile( fileobj=io.BytesIO( url.read() ) ) as p:
         page = p.read().decode( 'utf-8', 'ignore' ) 
     soup = BeautifulSoup( page )
     iprtv_codejsurl = urljoin( indexurl, soup.script['src'] )
+    """
+    r = requests.get( indexurl )
+    soup = BeautifulSoup( r.text, "html.parser" )
+    iprtv_codejsurl = urljoin( indexurl, soup.script['src'] )
 
     # Fetch and uncomplress the code.js file
+    """
     url =  request.urlopen( iprtv_codejsurl )
     with gzip.GzipFile( fileobj=io.BytesIO( url.read() ) ) as p:
         page = p.read().decode( 'utf-8', 'ignore' ) 
+    """
+    r = requests.get( iprtv_codejsurl )
+    page = r.text
 
     # Remove all linebreaks, that might screw up our regexes later
     page = page.replace( '\n','' )
@@ -68,7 +79,8 @@ def getChannels( indexurl ):
         # Category, tv_local, tv_sports, radio_bla, etc
         entry['cat'] = re.search( '[IJKL]\.((?:tv|radio)_[a-z]*?)\.[abc]\.push', cjs ).group(1)
         # Type; either radio or tv
-        entry['type']   = re.search( 'I\[a\]\.r="(.*?)"', cjs ).group(1)
+        #  Was: I\[a\]\.r="(.*?)"
+        entry['type']   = re.search( 'I\[a\]\.q="(.*?)"', cjs ).group(1)
 
         ## Webstreams (some channels have them), before meta, because of BBC Fist
         # da={b:{"default":"Uitzending Gemist"},G:"http://npo.app.zt6.nl/app",J:1,H:"npo.r.zt6.nl"}
@@ -81,6 +93,7 @@ def getChannels( indexurl ):
             entry['webstream']['type2'] = c_webstream['H']
 
         # {k:a,b:{"default":"NPO 1"},q:{"default":"NPO 1"},j:"ned1",n:"ned1",w:"npotv1.png",v:"npotv1.png",u:"npotv1.png",o:b,e:[],f:[],g:[]}
+        # k:a,b:{"default":"RTL 4"},p:{"default":"RTL 4"},j:"rtl4",m:"rtl4",v:"rtl4.png",u:"rtl4.png",s:"rtl4.png",fa:{b:{"default":"RTL XL"},I:"http://rtlxl.app.zt6.nl/app",J:1,K:"rtlxl.r.zt6.nl"},n:b,d:[],e:[],g:[]
         c_meta =  re.search( '\{(k:a,b:\{.*?g:\[\])\}', cjs).group(1)
         # Some channels have their 'webstream' item embedded within their meta line.
         # Need to strip that first, incl trailing ','
@@ -127,8 +140,11 @@ def getChannels( indexurl ):
 def _parseJsDict( line ):
     # Meta:         k:a,b:{"default":"NPO 1"},q:{"default":"NPO 1"},j:"ned1",n:"ned1",w:"npotv1.png",v:"npotv1.png",u:"npotv1.png",o:b,e:[],f:[],g:[]
     # Webstream:    b:{"default":"Uitzending Gemist"},G:"http://npo.app.zt6.nl/app",J:1,H:"npo.r.zt6.nl"
+    # New:          k:a,b:{"default":"RTL 4"},p:{"default":"RTL 4"},j:"rtl4",m:"rtl4",v:"rtl4.png",u:"rtl4.png",s:"rtl4.png",fa:{b:{"default":"RTL XL"},I:"http://rtlxl.app.zt6.nl/app",J:1,K:"rtlxl.r.zt6.nl"},n:b,d:[],e:[],g:[]
     ret = {}
     line = re.sub( '[{}"]', '', line )
+    # HACK, strip fa:
+    line = line.replace( 'fa:', '' )
     variables = line.split(',')
     for var in variables:
         key,value = var.split(':',1)
